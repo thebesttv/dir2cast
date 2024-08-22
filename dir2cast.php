@@ -4,17 +4,17 @@
  * Copyright (c) 2008-2022, Ben XO (me@ben-xo.com).
  *
  * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without 
+ *
+ * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
- *  * Redistributions of source code must retain the above copyright notice, 
+ *
+ *  * Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
- *  * Redistributions in binary form must reproduce the above copyright notice, 
- *    this list of conditions and the following disclaimer in the documentation 
+ *  * Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *  * Neither the name of dir2cast nor the names of its contributors may be used 
- *    to endorse or promote products derived from this software without specific 
+ *  * Neither the name of dir2cast nor the names of its contributors may be used
+ *    to endorse or promote products derived from this software without specific
  *    prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -27,30 +27,30 @@
  * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************
  *
  * USAGE:
- * 
+ *
  * 1) edit dir2cast.ini and fill in the settings.
- * 
+ *
  * 2) visit:
- * 
+ *
  * http://www.yoursite.com/dir2cast.php
- * 
+ *
  * or
- * 
- * http://www.yoursite.com/dir2cast.php?dir=my_mp3_subdir 
+ *
+ * http://www.yoursite.com/dir2cast.php?dir=my_mp3_subdir
  * ^-- check in the README.txt for a way to get pretty URLS using mod_rewrite
- * 
+ *
  * or
- * 
- * user$ php ./dir2cast.php my_mp3_dir 
+ *
+ * user$ php ./dir2cast.php my_mp3_dir
  * ^-- from the command line
- * 
+ *
  * If your MP3 dir is different from the dir the script is in, then you can have
  * have a master dir2cast.ini in the same dir as dir2cast.php, and cast-specific
- * configuration in another dir2cast.ini in the same dir as your MP3s. 
+ * configuration in another dir2cast.ini in the same dir as your MP3s.
  */
 
 /* DEFAULTS *********************************************/
@@ -74,7 +74,7 @@ function __autoloader($class_name)
     switch(strtolower($class_name))
     {
         case 'getid3':
-            
+
             ErrorHandler::prime('getid3');
             if(file_exists('getID3/getid3.php'))
                 require_once('getID3/getid3.php');
@@ -82,7 +82,7 @@ function __autoloader($class_name)
                 require_once('getid3/getid3.php');
             ErrorHandler::defuse();
             break;
-            
+
         default:
             if(file_exists($class_name . '.php'))
                 require_once $class_name . '.php';
@@ -95,14 +95,14 @@ spl_autoload_register('__autoloader');
 class ExitException extends Exception {}
 
 abstract class GetterSetter {
-    
+
     protected $parameters = array();
-    
+
     /**
      * Missing Method Magic Accessor
      *
      * @param string $method Method to call (get* or set*)
-     * @param array $params array of parameters for the method 
+     * @param array $params array of parameters for the method
      * @return mixed the result of the method
      */
     public function __call($method, $params)
@@ -115,15 +115,15 @@ abstract class GetterSetter {
                 if(isset($this->parameters[$var_name]))
                     return $this->parameters[$var_name];
                 break;
-                
+
             case 'set':
                 $this->parameters[$var_name] = $params[0];
                 break;
-                
+
             default:
                 throw new Exception("Unknown method '" . $method . "' called on " . __CLASS__);
         }
-    }    
+    }
 }
 
 interface Podcast_Helper {
@@ -143,7 +143,7 @@ class getID3_Podcast_Helper implements Podcast_Helper {
         return get_class($this);
     }
     static $AUTO_SAVE_COVER_ART = false;
-        
+
     public function appendToChannel(DOMElement $d, DOMDocument $doc) { /* nothing */ }
     public function addNamespaceTo(DOMElement $d, DOMDocument $doc) { /* nothing */ }
 
@@ -160,7 +160,7 @@ class getID3_Podcast_Helper implements Podcast_Helper {
             $getid3->option_tags_html = false;
             // $getid3->option_save_attachments = true; // TODO: set this to a path
             $getid3->encoding = 'UTF-8';
-            
+
             try
             {
                 $info = $getid3->analyze($item->getFilename());
@@ -171,7 +171,7 @@ class getID3_Podcast_Helper implements Podcast_Helper {
                 // MP3 couldn't be analyzed.
                 return;
             }
-            
+
             unset($this->getid3);
 
             if(!empty($info['comments']))
@@ -200,12 +200,12 @@ class getID3_Podcast_Helper implements Podcast_Helper {
                     }
                 }
             }
-            
+
             if(!empty($info['playtime_string']))
                 $item->setDuration( $info['playtime_string'] );
             else
                 $item->setDuration('0:00');
-            
+
             $item->setAnalyzed(true);
         }
     }
@@ -229,7 +229,7 @@ class Caching_getID3_Podcast_Helper implements Podcast_Helper {
         $this->wrapped_helper = $getID3_podcast_helper;
     }
 
-    public function appendToChannel(DOMElement $d, DOMDocument $doc) { 
+    public function appendToChannel(DOMElement $d, DOMDocument $doc) {
         return $this->wrapped_helper->appendToChannel($d, $doc);
     }
 
@@ -285,22 +285,22 @@ class Atom_Podcast_Helper extends GetterSetter implements Podcast_Helper {
     {
          return get_class($this);
     }
-    
+
     protected $self_link;
-    
+
     public function __construct() { }
-    
+
     public function getNSURI()
     {
         return 'http://www.w3.org/2005/Atom';
     }
-    
+
     public function addNamespaceTo(DOMElement $d, DOMDocument $doc)
     {
         $d->appendChild( $doc->createAttribute( 'xmlns:atom' ) )
             ->appendChild( new DOMText( $this->getNSURI() ) );
     }
-    
+
     public function appendToChannel(DOMElement $channel, DOMDocument $doc)
     {
         foreach ($this->parameters as $name => $val)
@@ -308,21 +308,21 @@ class Atom_Podcast_Helper extends GetterSetter implements Podcast_Helper {
             $channel->appendChild( $doc->createElement('atom:' . $name) )
                 ->appendChild( new DOMText($val)    );
         }
-        
+
         if(!empty($this->self_link))
         {
             $linkNode = $channel->appendChild( $doc->createElement('atom:link') );
             $linkNode->setAttribute('href', $this->self_link);
             $linkNode->setAttribute('rel', 'self');
             $linkNode->setAttribute('type', ATOM_TYPE);
-        }        
+        }
     }
-    
+
     public function appendToItem(DOMElement $item_element, DOMDocument $doc, RSS_Item $item)
     {
 
     }
-    
+
     public function setSelfLink($link)
     {
         $this->self_link = $link;
@@ -334,26 +334,26 @@ class iTunes_Podcast_Helper extends GetterSetter implements Podcast_Helper {
     {
         return get_class($this);
     }
-    
+
     static $ITUNES_SUBTITLE_SUFFIX = '';
     static $ITUNES_TYPE = "episodic";
 
     protected $owner_name, $owner_email, $image_href, $explicit;
     protected $categories = array();
-    
+
     public function __construct() { }
-    
+
     public function getNSURI()
     {
         return 'http://www.itunes.com/dtds/podcast-1.0.dtd';
     }
-    
+
     public function addNamespaceTo(DOMElement $d, DOMDocument $doc)
     {
         $d->appendChild( $doc->createAttribute( 'xmlns:itunes' ) )
             ->appendChild( new DOMText( $this->getNSURI() ) );
     }
-    
+
     public function appendToChannel(DOMElement $channel, DOMDocument $doc)
     {
         foreach ($this->parameters as $name => $val)
@@ -361,12 +361,12 @@ class iTunes_Podcast_Helper extends GetterSetter implements Podcast_Helper {
             $channel->appendChild( $doc->createElement('itunes:' . $name) )
                 ->appendChild( new DOMText($val)    );
         }
-        
+
         foreach ($this->categories as $category => $subcats)
         {
             $this->appendCategory($category, $subcats, $channel, $doc);
         }
-        
+
         if(!empty($this->owner_name) || !empty($this->owner_email))
         {
             $owner = $channel->appendChild( $doc->createElement('itunes:owner') );
@@ -376,21 +376,21 @@ class iTunes_Podcast_Helper extends GetterSetter implements Podcast_Helper {
                 $owner->appendChild( $doc->createElement('itunes:name') )
                     ->appendChild( new DOMText( $this->owner_name ) );
             }
-            
+
             if(!empty($this->owner_email))
             {
                 $owner->appendChild( $doc->createElement('itunes:email') )
                     ->appendChild( new DOMText( $this->owner_email ) );
             }
         }
-        
+
         if(!empty($this->explicit))
         {
             $channel->appendChild( $doc->createElement('itunes:explicit') )
                 ->appendChild( new DOMText( $this->explicit ) );
         }
-        
-        
+
+
         if(!empty($this->image_href))
         {
             $channel->appendChild( $doc->createElement('itunes:image') )
@@ -403,14 +403,14 @@ class iTunes_Podcast_Helper extends GetterSetter implements Podcast_Helper {
                 ->appendChild( new DOMText( iTunes_Podcast_Helper::$ITUNES_TYPE == "serial" ? "serial" : "episodic" ) );
         }
     }
-    
+
     public function appendToItem(DOMElement $item_element, DOMDocument $doc, RSS_Item $item)
     {
         /*
          *    <itunes:author>John Doe</itunes:author>
          *    <itunes:duration>7:04</itunes:duration>
          *    <itunes:subtitle>A short primer on table spices</itunes:subtitle>
-         *    <itunes:summary>This week we talk about salt and pepper shakers, 
+         *    <itunes:summary>This week we talk about salt and pepper shakers,
          *                  [...] Come and join the party!</itunes:summary>
          *    <itunes:keywords>salt, pepper, shaker, exciting</itunes:keywords>
          */
@@ -421,8 +421,8 @@ class iTunes_Podcast_Helper extends GetterSetter implements Podcast_Helper {
             //'keywords' => 'not supported yet.'
         );
 
-        // iTunes summary is excluded if it's empty, because the default is to 
-        // duplicate what's in the "description field", but iTunes will fall back 
+        // iTunes summary is excluded if it's empty, because the default is to
+        // duplicate what's in the "description field", but iTunes will fall back
         // to showing the <description> if there is no summary anyway.
         $itunes_summary = $item->getSummary();
         if($itunes_summary !== '')
@@ -453,7 +453,7 @@ class iTunes_Podcast_Helper extends GetterSetter implements Podcast_Helper {
                 $elements['season'] = $season;
             }
         }
-                
+
         foreach($elements as $key => $val)
             if(!empty($val))
                  $item_element->appendChild( $doc->createElement('itunes:' . $key) )
@@ -467,20 +467,20 @@ class iTunes_Podcast_Helper extends GetterSetter implements Podcast_Helper {
                     ->setAttribute('href', $item_image);
         }
     }
-    
+
     public function appendCategory($category, $subcats, DOMElement $e, DOMDocument $doc)
     {
         $e->appendChild( $element = $doc->createElement('itunes:category') )
             ->setAttribute('text', $category);
-            
-        if(is_array($subcats)) 
+
+        if(is_array($subcats))
             foreach($subcats as $subcategory => $subsubcats)
                 $this->appendCategory($subcategory, $subsubcats, $element, $doc);
     }
-    
+
     /**
      * Takes a category specification string and arrayifies it.
-     * e.g.  
+     * e.g.
      * 'Music, Technology > Gadgets '
      * becomes
      * array( 'Music' => true, 'Technology' => array( 'Gadgets' ) );
@@ -513,7 +513,7 @@ class iTunes_Podcast_Helper extends GetterSetter implements Podcast_Helper {
         }
         $this->categories = $categories;
     }
-    
+
     public function setOwnerName($name)
     {
         $this->owner_name = $name;
@@ -523,12 +523,12 @@ class iTunes_Podcast_Helper extends GetterSetter implements Podcast_Helper {
     {
         $this->owner_email = $email;
     }
-    
+
     public function setImage($href)
     {
         $this->image_href = $href;
     }
-    
+
     public function setExplicit($explicit)
     {
         $this->explicit = $explicit;
@@ -536,11 +536,11 @@ class iTunes_Podcast_Helper extends GetterSetter implements Podcast_Helper {
 }
 
 class RSS_Item extends GetterSetter {
-    
+
     protected $helpers = array();
-    
+
     public function __construct() { }
-    
+
     public function appendToChannel(DOMElement $channel, DOMDocument $doc)
     {
         $item_element = $channel->appendChild( new DOMElement('item') );
@@ -550,35 +550,35 @@ class RSS_Item extends GetterSetter {
             // do helpers first; they may fill in the stuff we add down below.
             $helper->appendToItem($item_element, $doc, $this);
         }
-        
+
         $item_elements = array(
             'title' => $this->getTitle(),
             'link' => $this->getLink(),
             'pubDate' => $this->getPubDate()
         );
-        
+
         $cdata_item_elements = array(
             'description' => $this->getDescription()
         );
-        
+
         if(empty($item_elements['title']))
             $item_elements['title'] = '(untitled)';
-        
+
         foreach($item_elements as $name => $val)
         {
             $item_element->appendChild( new DOMElement($name) )
                 ->appendChild(new DOMText($val));
         }
-        
+
         foreach($cdata_item_elements as $name => $val)
         {
             if($name == 'description')
                 if(!defined('DESCRIPTION_HTML'))
                     $val = htmlspecialchars((string)$val);
-                    
+
             $item_element->appendChild( new DOMElement($name) )
                 ->appendChild( $doc->createCDATASection(
-                    // reintroduce newlines as <br />. 
+                    // reintroduce newlines as <br />.
                     nl2br($val)
                   ) );
         }
@@ -596,7 +596,7 @@ class RSS_Item extends GetterSetter {
         $enclosure->setAttribute('length', $this->getLength());
         $enclosure->setAttribute('type', $this->getType());
     }
-    
+
     public function addHelper(Podcast_Helper $helper)
     {
         $this->helpers[$helper->id()] = $helper;
@@ -605,7 +605,7 @@ class RSS_Item extends GetterSetter {
 }
 
 class RSS_File_Item extends RSS_Item {
-    
+
     static $FILES_URL = '';
     static $FILES_DIR = '';
 
@@ -615,12 +615,12 @@ class RSS_File_Item extends RSS_Item {
         $this->setLinkFromFilename($filename);
         parent::__construct();
     }
-    
+
     public function setLinkFromFilename($filename)
     {
         $this->setLink($this->filenameToUrl($filename));
     }
-    
+
     public function setFilename($filename)
     {
         parent::setFilename($filename);
@@ -648,7 +648,7 @@ class RSS_File_Item extends RSS_Item {
         }
         return $filename;
     }
-    
+
     /**
      * RSS_File_Items will always have a title (the filename) so, in subclasses, to check if one was set manually
      * you must call this method, not just check if parent::getTitle() is empty.
@@ -661,7 +661,7 @@ class RSS_File_Item extends RSS_Item {
     /**
      * Default title for an RSS Item is its filename.
      * Subclasses (Such as Media_RSS_Item, MP3_RSS_Item, etc) override this using e.g. ID3 tags.
-     * 
+     *
      * @return string
      */
     public function getTitle()
@@ -674,7 +674,7 @@ class RSS_File_Item extends RSS_Item {
 
         return basename($this->getFilename());
     }
-    
+
     public function getType()
     {
         $overridden_type = parent::getType();
@@ -685,11 +685,11 @@ class RSS_File_Item extends RSS_Item {
 
         return 'application/octet-stream';
     }
-        
+
     /**
      * Place a file with the same name but .txt instead of .<whatever> and the contents will be used
      * as the summary for the item in the podcast.
-     * 
+     *
      * The summary appears in iTunes when you click the 'more info' icon, and can be
      * multiple lines long.
      *
@@ -711,7 +711,7 @@ class RSS_File_Item extends RSS_Item {
     /**
      * Place a file with the same name but _subtitle.txt instead of .<whatever> and the contents will be used
      * as the subtitle for the item in the podcast.
-     * 
+     *
      * The subtitle appears inline with the podcast item in iTunes, and has a 'more info' icon next
      * to it. It should be a single line.
      *
@@ -748,7 +748,7 @@ class RSS_File_Item extends RSS_Item {
     /**
      * Place a file with the same name but .jpg or .png instead of .<whatever> and the contents will be used
      * as the cover art for the item in the podcast.
-     * 
+     *
      * @return String the filename of the cover art or null if there's no cover art file
      */
     public function getImage()
@@ -860,8 +860,8 @@ class Media_RSS_Item extends RSS_File_Item implements Serializable {
     }
 
     public function setFromMediaFile()
-    { 
-        // don't do any heavy-lifting here as this is called by the constructor, which 
+    {
+        // don't do any heavy-lifting here as this is called by the constructor, which
         // is called once for every media file in the dir (not just the ITEM_COUNT in the cast)
         // TODO: this will go slightly faster if we don't do these syscalls here
         $this->setLength($this->getFileSize());
@@ -870,17 +870,17 @@ class Media_RSS_Item extends RSS_File_Item implements Serializable {
 
     /**
      * The title of the file item as it should appear in the podcast.
-     * 
+     *
      * Media_RSS_Items will derive this from the ID3 (or other) tags in the file, if available.
-     * 
+     *
      * The default title is just the "Title" tag, unless LONG_TITLES is set, in which case
      * it's "Album - Artist - Title" using the applicable tags.
-     * 
+     *
      * If these are all blank, it falls back to the filename so that you can at least see what is
      * what in the feed.
-     * 
+     *
      * @see RSS_File_Item::getTitle()
-     * 
+     *
      * @return string
      */
     public function getTitle()
@@ -998,8 +998,8 @@ class Media_RSS_Item extends RSS_File_Item implements Serializable {
     {
         if($serialized['serialVersion'] != self::SERIAL_VERSION)
             throw new SerializationException("Wrong serialized version");
-        
-        // keep properties we've already set. This should make cache files transferable 
+
+        // keep properties we've already set. This should make cache files transferable
         // whilst still gaining a speed-up over ID3-reading.
         $this->parameters = array_merge($serialized, $this->parameters);
     }
@@ -1010,7 +1010,7 @@ class Media_RSS_Item extends RSS_File_Item implements Serializable {
     }
 }
 
-class MP3_RSS_Item extends Media_RSS_Item 
+class MP3_RSS_Item extends Media_RSS_Item
 {
     public function __construct($filename)
     {
@@ -1042,33 +1042,33 @@ abstract class Podcast extends GetterSetter
 {
     protected $items = array();
     protected $helpers = array();
-    
+
     public function addHelper(Podcast_Helper $helper)
     {
         $this->helpers[$helper->id()] = $helper;
-        
+
         // attach helper to items already added.
         // new items will have the helper attached when they are added.
         foreach($this->items as $item)
             $item->addHelper($helper);
-            
+
         return $helper;
     }
-    
+
 //    public function getNSURI()
 //    {
 //        return 'http://backend.userland.com/RSS2';
 //    }
-    
+
     public function http_headers($content_length)
     {
-        // The correct content type is application/rss+xml; however, the de-facto standard is now text/xml. 
+        // The correct content type is application/rss+xml; however, the de-facto standard is now text/xml.
         // See https://stackoverflow.com/questions/595616/what-is-the-correct-mime-type-to-use-for-an-rss-feed
         header('Content-type: text/xml; charset=UTF-8');
         header('Content-length: ' . $content_length);
         header('Last-modified: ' . $this->getLastBuildDate());
     }
-    
+
     /**
      * Generates and returns the podcast RSS
      *
@@ -1077,24 +1077,24 @@ abstract class Podcast extends GetterSetter
     public function generate()
     {
         $this->pre_generate();
-        
+
         $this->setLastBuildDate(date('r'));
-        
+
         $doc = new DOMDocument('1.0', 'UTF-8');
         $doc->formatOutput = true;
-                    
+
         $rss = $doc->createElement('rss');
         $doc->appendChild($rss);
-        
+
         $rss->setAttribute('version', '2.0');
-        
+
         // we do not show the default xmlns. Seems to break the validator.
         //    $rss->appendChild( $doc->createAttribute( 'xmlns' ) )
         //        ->appendChild( new DOMText( $this->getNSURI() ) );
-            
+
         foreach($this->helpers as $helper)
             $helper->addNamespaceTo($rss, $doc);
-        
+
         // the channel
         $channel = $rss->appendChild(new DOMElement('channel'));
         $channel_elements = array(
@@ -1108,20 +1108,20 @@ abstract class Podcast extends GetterSetter
             'webMaster' => $this->getWebMaster(),
             'ttl' => $this->getTtl()
         );
-                
+
         foreach($channel_elements as $name => $val)
         {
             $channel->appendChild( new DOMElement($name) )
                 ->appendChild(new DOMText((string)$val));
         }
-        
+
         $this->appendImage($channel);
-        
+
         foreach($this->helpers as $helper)
         {
             $helper->appendToChannel($channel, $doc);
         }
-        
+
         // channel item list
         foreach($this->getItems() as $item)
         {
@@ -1130,13 +1130,13 @@ abstract class Podcast extends GetterSetter
         }
 
         $this->post_generate($doc);
-        
+
         $doc->normalizeDocument();
-        
+
         // see http://validator.w3.org/feed/docs/warning/CharacterData.html
-        return str_replace( 
-            array('&amp;', '&lt;', '&gt;'), 
-            array('&#x26;', '&#x3C;', '&#x3E;'), 
+        return str_replace(
+            array('&amp;', '&lt;', '&gt;'),
+            array('&#x26;', '&#x3C;', '&#x3E;'),
             utf8_for_xml($doc->saveXML())
         );
     }
@@ -1174,7 +1174,7 @@ abstract class Podcast extends GetterSetter
             $channel->appendChild($image);
         }
     }
-    
+
     protected function pre_generate() {    }
     protected function post_generate(DOMDocument $doc) { }
 
@@ -1196,7 +1196,7 @@ class Dir_Podcast extends Podcast
     protected $item_hash;
 
     protected $clock_offset = 0;
-    
+
     /**
      * Constructor
      *
@@ -1208,8 +1208,8 @@ class Dir_Podcast extends Podcast
     }
 
     /**
-     * Looks for all files in the media path and adds them to the podcast, 
-     * tracking the most recently modified date in ->max_mtime 
+     * Looks for all files in the media path and adds them to the podcast,
+     * tracking the most recently modified date in ->max_mtime
      */
     protected function scan()
     {
@@ -1218,7 +1218,7 @@ class Dir_Podcast extends Podcast
             self::$DEBUG && print("Scanning…\n");
 
             $this->pre_scan();
-            
+
             // scan the dir
 
             if(self::$RECURSIVE_DIRECTORY_ITERATOR)
@@ -1232,7 +1232,7 @@ class Dir_Podcast extends Podcast
             {
                 $di = new DirectoryIterator($this->source_dir);
             }
-            
+
             $item_count = 0;
             foreach($di as $file)
             {
@@ -1288,13 +1288,13 @@ class Dir_Podcast extends Podcast
             default:
                 // no other file types are considered for the podcast
         }
-        
+
         return count($this->unsorted_items);
     }
 
     public function updateMaxMtime($date, $filename)
     {
-        if($date > $this->max_mtime) 
+        if($date > $this->max_mtime)
         {
             self::$DEBUG && print("mtime ceiling {$this->max_mtime} ➡ {$date} (now: " . time() . ") from $filename\n");
             $this->max_mtime = $date;
@@ -1324,7 +1324,7 @@ class Dir_Podcast extends Podcast
 
     /**
      * Adds file to ->unsorted_items, and updates ->max_mtime
-     * 
+     *
      * @param RSS_File_Item $the_item
      */
     protected function addRssFileItem(RSS_File_Item $the_item)
@@ -1353,15 +1353,15 @@ class Dir_Podcast extends Podcast
     protected function pre_generate()
     {
         $this->scan();
-        
-        // Add helpers here, NOT during scan(). 
+
+        // Add helpers here, NOT during scan().
         // scan() is also used just to get mtimes to see if we need to regenerate the feed.
         foreach($this->helpers as $helper)
             foreach($this->items as $the_item)
                 $the_item->addHelper($helper);
     }
 
-    protected function sort() { 
+    protected function sort() {
         krsort($this->unsorted_items); // newest first
         $this->items = array();
 
@@ -1401,7 +1401,7 @@ class Cached_Dir_Podcast extends Dir_Podcast
 
     /**
      * Constructor
-     * 
+     *
      * After constructing, you should call ->init() to make use of the whole-feed cache
      *
      * @param string $source_dir
@@ -1411,7 +1411,7 @@ class Cached_Dir_Podcast extends Dir_Podcast
     {
         $this->temp_dir = $temp_dir;
         $safe_source_name = preg_replace('/[^\w]/', '_', dirname($source_dir) . '/' . basename($source_dir) );
-        
+
         // something unique, safe, stable and easily identifiable
         $this->temp_file = rtrim($temp_dir, '/') . '/' . md5($source_dir) . '_' . $safe_source_name . '.xml';
         $this->item_hash_file = rtrim($temp_dir, '/') . '/' . md5($source_dir) . '_' . $safe_source_name . '__item_hash.txt';
@@ -1423,7 +1423,7 @@ class Cached_Dir_Podcast extends Dir_Podcast
      * Initialises the cache file
      */
     public function init()
-    { 
+    {
         if($this->isCached())
         {
             self::$DEBUG && print("Found cache file\n");
@@ -1432,7 +1432,7 @@ class Cached_Dir_Podcast extends Dir_Podcast
             $cache_date = filemtime($this->temp_file);
 
             // if the cache file is quite new, don't bother regenerating.
-            if( $cache_date < time() - self::$MIN_CACHE_TIME ) 
+            if( $cache_date < time() - self::$MIN_CACHE_TIME )
             {
                 self::$DEBUG && print("Cache file is older than " . self::$MIN_CACHE_TIME . " seconds\n");
 
@@ -1459,7 +1459,7 @@ class Cached_Dir_Podcast extends Dir_Podcast
             }
         }
     }
-    
+
     /**
      * Cache is considered stale (i.e. not a good representation of the source folder) if:
      * * the date of the cache is < the date of the most recent modified file OR
@@ -1467,7 +1467,7 @@ class Cached_Dir_Podcast extends Dir_Podcast
      * * AND the most recent change is more than MIN_CACHE_TIME in the past (to avoid incomplete files)
      *
      * $cache_date is usually the modification time of the cache file itself.
-     *  
+     *
      * $most_recent_modification is usually passed in from $this->max_mtime i.e. the most recently modified
      * podcast media file, and can be 0 if there are no files at all in the podcast yet.
      *
@@ -1537,13 +1537,13 @@ class Cached_Dir_Podcast extends Dir_Podcast
 class Locking_Cached_Dir_Podcast extends Cached_Dir_Podcast
 {
     protected $file_handle;
-    
+
     public function init()
     {
         $this->acquireLock();
         parent::init();
     }
-    
+
     /**
      * acquireLock always creates the cache file.
      */
@@ -1558,7 +1558,7 @@ class Locking_Cached_Dir_Podcast extends Cached_Dir_Podcast
         if(!flock($this->file_handle, LOCK_EX))
             throw new Exception('Locking cache file failed.');
     }
-    
+
     /**
      * releaseLock will delete the cache file before unlocking if it's empty.
      */
@@ -1567,12 +1567,12 @@ class Locking_Cached_Dir_Podcast extends Cached_Dir_Podcast
         clearstatcache();
         if(file_exists($this->temp_file) && !filesize($this->temp_file))
             unlink($this->temp_file);
-        
+
         // this releases the lock implicitly
         if($this->file_handle)
             fclose($this->file_handle);
     }
-    
+
     public function __destruct()
     {
         $this->releaseLock();
@@ -1583,31 +1583,31 @@ class ErrorHandler
 {
     public static $primer;
     private static $errors = true;
-    
+
     public static function prime($type)
     {
         self::$primer = $type;
     }
-    
+
     public static function defuse()
     {
         self::$primer = null;
     }
-    
+
     public static function errors($state)
     {
         self::$errors = $state;
     }
-    
+
     public static function handle_error($errno, $errstr, $errfile=null, $errline=null, $errcontext=null)
-    {    
+    {
         // note: this is required to support the @ operator, which getID3 uses extensively
         if(error_reporting() & $errno)
         {
             ErrorHandler::display($errstr, $errfile, $errline);
         }
     }
-    
+
     /**
      * In PHP5, this will be an Exception, but in PHP7 is can be a Throwable
      */
@@ -1615,21 +1615,21 @@ class ErrorHandler
     {
         ErrorHandler::display($e->getMessage(), $e->getFile(), $e->getLine());
     }
-    
+
     public static function get_primed_error($type)
     {
         switch($type)
         {
             case 'ini':
                 return 'Suggestion: Make sure that your ini file is valid. If the error is on a specific line, try enclosing the value in "quotes".';
-            
+
             case 'getid3':
                 return 'dir2cast requires getID3. You should download this from <a href="' . DIR2CAST_HOMEPAGE . '">' . DIR2CAST_HOMEPAGE .'</a> and install it with dir2cast.';
         }
     }
 
     public static function display($message, $errfile, $errline)
-    {    
+    {
         if(self::$errors)
         {
             if(!defined('CLI_ONLY'))
@@ -1648,16 +1648,16 @@ class ErrorHandler
             if((!defined('CLI_ONLY')) && ini_get('html_errors'))
             {
                 header("Content-type: text/html"); // reset the content-type
-                        
+
                 ?><!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
                 <html><head><title>dir2cast <?php echo VERSION; ?> error</title>
-                <meta http-equiv="Content-Type" content="text/html; charset=utf-8"> 
+                <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
                 <style type="text/css">
                     body { font-family: Calibri, Arial, Helvetica, sans-serif; font-size: 16px; }
                     h1 { font-weight: bold; font-size: 200%; }
                     a img { border: 0px; }
                     #footer { font-size: 12px; margin-top: 1em;}
-                    #the_error { border: 1px red solid; padding: 1em; } 
+                    #the_error { border: 1px red solid; padding: 1em; }
                     #additional_error { font-size: 14px; }
                 </style>
                 </head>
@@ -1711,7 +1711,7 @@ class ErrorHandler
 class SettingsHandler
 {
     private static $settings_cache = array();
-    
+
     /**
      * getopt() uses argv directly and is a pain to mock. It's nicer to pass argv in,
      * but mocking it a pain.
@@ -1729,7 +1729,7 @@ class SettingsHandler
 
     /**
      * This method sets up all app-wide settings that are required at initialization time.
-     * 
+     *
      * @param $SERVER Array HTTP Server array containing HTTP_HOST, SCRIPT_FILENAME, DOCUMENT_ROOT, HTTPS
      * @param $GET Array HTTP GET
      * @param $argv Array command line options
@@ -1758,7 +1758,7 @@ class SettingsHandler
             self::finalize(array('TMP_DIR', 'MP3_BASE', 'MP3_DIR', 'MIN_CACHE_TIME', 'FORCE_PASSWORD'));
             define('INI_FILE', $ini_file_name);
         }
-        
+
         $cli_options = self::getopt($argv, '', array('help', 'media-dir::', 'media-url::', 'output::', 'dont-uncache', 'min-file-age::', 'debug', 'ignore-dir2cast-mtime', 'clock-offset::'));
         if($cli_options) {
             if(isset($cli_options['help'])) {
@@ -1812,10 +1812,10 @@ class SettingsHandler
                 define('CLOCK_OFFSET', (int)$cli_options['clock-offset']);
             }
         }
-       
+
         if(!defined('MIN_CACHE_TIME'))
             define('MIN_CACHE_TIME', 5);
-        
+
         if(!defined('FORCE_PASSWORD'))
             define('FORCE_PASSWORD', '');
 
@@ -1847,32 +1847,32 @@ class SettingsHandler
                 define('MP3_DIR', MP3_BASE());
         }
     }
-    
+
     /**
      * This method sets up all fall-back default instance settings AFTER all .ini files have been loaded.
      */
     public static function defaults(array $SERVER)
     {
         // if an MP3_DIR specific config file exists, load it now, as long as it's not the same file as the global one!
-        if( 
-            file_exists( MP3_DIR() . 'dir2cast.ini' ) and    
-            realpath(DIR2CAST_BASE() . 'dir2cast.ini') != realpath( MP3_DIR() . 'dir2cast.ini' ) 
+        if(
+            file_exists( MP3_DIR() . 'dir2cast.ini' ) and
+            realpath(DIR2CAST_BASE() . 'dir2cast.ini') != realpath( MP3_DIR() . 'dir2cast.ini' )
         ) {
             self::load_from_ini( MP3_DIR() . 'dir2cast.ini' );
         }
-        
+
         self::finalize();
-        
+
         if(!defined('MP3_URL'))
         {
             # This works on the principle that MP3_DIR must be under DOCUMENT_ROOT (otherwise how will you serve the MP3s?)
             # This may fail if MP3_DIR, or one of its parents under DOCUMENT_ROOT, is a symlink. In that case you will have
             # to set this manually.
-            
+
             if(!empty($SERVER['HTTP_HOST']))
             {
                 $path_part = substr(MP3_DIR(), strlen(slashdir($SERVER['DOCUMENT_ROOT'])));
-                define('MP3_URL', 
+                define('MP3_URL',
                     'http' . (!empty($SERVER['HTTPS']) ? 's' : '') . '://' . $SERVER['HTTP_HOST'] . '/' . ltrim( slashdir( $path_part ), '/' ));
             }
             else
@@ -1886,7 +1886,7 @@ class SettingsHandler
             else
                 define('TITLE', 'My First dir2cast Podcast');
         }
-        
+
         if(!defined('LINK'))
         {
             if(!empty($SERVER['HTTP_HOST']))
@@ -1902,7 +1902,7 @@ class SettingsHandler
             else
                 define('RSS_LINK', 'http://www.example.com/rss');
         }
-        
+
         if(!defined('DESCRIPTION'))
         {
             if(file_exists(MP3_DIR() . 'description.txt'))
@@ -1912,22 +1912,22 @@ class SettingsHandler
             else
                 define('DESCRIPTION', 'Podcast');
         }
-        
+
         if(!defined('ATOM_TYPE'))
             define('ATOM_TYPE','application/rss+xml');
 
         if(!defined('LANGUAGE'))
             define('LANGUAGE', 'en-us');
-        
+
         if(!defined('COPYRIGHT'))
             define('COPYRIGHT', date('Y'));
-            
+
         if(!defined('TTL'))
             define('TTL', 60);
-            
+
         if(!defined('ITEM_COUNT'))
             define('ITEM_COUNT', 10);
-            
+
         if(!defined('ITUNES_SUBTITLE'))
         {
             if(file_exists(MP3_DIR() . 'itunes_subtitle.txt'))
@@ -1937,7 +1937,7 @@ class SettingsHandler
             else
                 define('ITUNES_SUBTITLE', DESCRIPTION);
         }
-        
+
         if(!defined('ITUNES_SUMMARY'))
         {
             if(file_exists(MP3_DIR() . 'itunes_summary.txt'))
@@ -1961,7 +1961,7 @@ class SettingsHandler
             else
                 define('IMAGE', '');
         }
-        
+
         if(!defined('ITUNES_IMAGE'))
         {
             if(file_exists(MP3_DIR() . 'itunes_image.jpg'))
@@ -1975,13 +1975,13 @@ class SettingsHandler
             else
                 define('ITUNES_IMAGE', '');
         }
-        
+
         if(!defined('ITUNES_OWNER_NAME'))
             define('ITUNES_OWNER_NAME', '');
-        
+
         if(!defined('ITUNES_OWNER_EMAIL'))
             define('ITUNES_OWNER_EMAIL', '');
-        
+
         if(!defined('WEBMASTER'))
         {
             if(ITUNES_OWNER_NAME != '' and ITUNES_OWNER_EMAIL != '')
@@ -1989,16 +1989,16 @@ class SettingsHandler
             else
                 define('WEBMASTER', '');
         }
-        
+
         if(!defined('ITUNES_AUTHOR'))
             define('ITUNES_AUTHOR', WEBMASTER);
-        
+
         if(!defined('ITUNES_CATEGORIES'))
             define('ITUNES_CATEGORIES', '');
-        
+
         if(!defined('ITUNES_EXPLICIT'))
             define('ITUNES_EXPLICIT', '');
-            
+
         if(!defined('LONG_TITLES'))
             define('LONG_TITLES', false);
 
@@ -2046,29 +2046,29 @@ class SettingsHandler
         Media_RSS_Item::$LONG_TITLES = LONG_TITLES;
         Media_RSS_Item::$DESCRIPTION_SOURCE = DESCRIPTION_SOURCE;
     }
-    
+
     public static function load_from_ini($file)
     {
         ErrorHandler::prime('ini');
-        $settings = parse_ini_file($file); 
+        $settings = parse_ini_file($file);
         ErrorHandler::defuse();
-        
+
         self::$settings_cache = array_merge(self::$settings_cache, $settings);
     }
-    
+
     public static function finalize($setting_names=null)
     {
         if(is_array($setting_names))
             // define only those listed
             foreach($setting_names as $s)
-                !defined($s) and 
+                !defined($s) and
                     isset(self::$settings_cache[$s]) and
                         define($s, self::$settings_cache[$s]);
         else
         {
             // define all
             foreach(self::$settings_cache as $s => $s_val)
-                if(!defined($s)) 
+                if(!defined($s))
                     define($s, $s_val);
         }
     }
@@ -2214,8 +2214,8 @@ class Dispatcher
  * @param string $s
  * @return string un-mangled $s
  */
-function magic_stripslashes($s) 
-{ 
+function magic_stripslashes($s)
+{
     if(function_exists('get_magic_quotes_gpc'))
     {
         return get_magic_quotes_gpc() ? stripslashes($s) : $s;
@@ -2225,10 +2225,10 @@ function magic_stripslashes($s)
 
 /**
  * Filters a path so that it is not absolute and contains no ".." components.
- * 
+ *
  * @param string the path to filter
  * @return string filtered path
- * 
+ *
  */
 function safe_path($p)
 {
@@ -2238,12 +2238,12 @@ function safe_path($p)
 /**
  * https://stackoverflow.com/questions/12229572/php-generated-xml-shows-invalid-char-value-27-message
  * https://github.com/ben-xo/dir2cast/issues/35
- * 
+ *
  * Not all valid UTF-8 characters are valid XML characters. In particular, legacy ASCII control codes
- * (such as field separators) are valid UTF-8 but not valid XML. We strip them from the text when 
+ * (such as field separators) are valid UTF-8 but not valid XML. We strip them from the text when
  * rendering the XML.
- * 
- * 
+ *
+ *
  * @param string text that will go in an XML document
  * @return string safer text that will go in an XML
  */
@@ -2274,15 +2274,15 @@ function MP3_DIR() {
 function main($args)
 {
     SettingsHandler::bootstrap(
-        empty($_SERVER) ? array() : $_SERVER, 
-        empty($_GET) ? array() : $_GET, 
-        empty($args) ? array() : $args 
+        empty($_SERVER) ? array() : $_SERVER,
+        empty($_GET) ? array() : $_GET,
+        empty($args) ? array() : $args
     );
 
     SettingsHandler::defaults(
         empty($_SERVER) ? array() : $_SERVER
     );
-    
+
     $podcast = new Locking_Cached_Dir_Podcast(MP3_DIR(), TMP_DIR);
     $podcast->setClockOffset(CLOCK_OFFSET);
     $dispatcher = new Dispatcher($podcast);
