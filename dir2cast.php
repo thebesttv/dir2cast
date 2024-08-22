@@ -208,6 +208,10 @@ class getID3_Podcast_Helper implements Podcast_Helper {
             else
                 $item->setDuration('0:00');
 
+            // use creation time as pubDate
+            if (!empty($info['quicktime']['timestamps_unix']['create']['moov mvhd']))
+                $item->setPubDate(date('r', $info['quicktime']['timestamps_unix']['create']['moov mvhd']));
+
             $item->setAnalyzed(true);
         }
     }
