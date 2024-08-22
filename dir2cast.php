@@ -208,6 +208,9 @@ class getID3_Podcast_Helper implements Podcast_Helper {
             else
                 $item->setDuration('0:00');
 
+            // thebesttv: debug
+            // $item->setInfo(json_encode($info['quicktime'], JSON_PRETTY_PRINT));
+
             // use creation time as pubDate if available
             if (!empty($info['quicktime']['timestamps_unix']['create'])) {
                 $timestamp = $info['quicktime']['timestamps_unix']['create']['moov mvhd'];
@@ -564,6 +567,8 @@ class RSS_Item extends GetterSetter {
         $item_elements = array(
             'title' => $this->getTitle(),
             'link' => $this->getLink(),
+            // thebesttv: debug
+            // 'info' => $this->getInfo(),
             'pubDate' => $this->getPubDate()
         );
 
